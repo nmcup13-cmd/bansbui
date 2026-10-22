@@ -78,6 +78,24 @@ def monthly_sales(df: pd.DataFrame) -> pd.Series:
     return _delivered(df).groupby("month")["net"].sum().sort_index()
 
 
+def orders_in_month(df: pd.DataFrame, month: str) -> pd.DataFrame:
+    """คำสั่งซื้อทุกสถานะของเดือน 'YYYY-MM' (สำเนา ไม่กระทบ df เดิม)"""
+    return df[df["month"] == month].copy()
+
+
+def previous_month(month: str) -> str:
+    """เดือนก่อนหน้าของ 'YYYY-MM' เช่น '2026-01' → '2025-12'"""
+    return (pd.Period(month, freq="M") - 1).strftime("%Y-%m")
+
+
+def top_products(df: pd.DataFrame, n: int = 5) -> pd.DataFrame:
+    """สินค้าขายดีตามยอดขายสุทธิ คอลัมน์ product_id, product_name, qty, net เรียงจากมากไปน้อย"""
+    return (_delivered(df).groupby(["product_id", "product_name"], as_index=False)
+            .agg(qty=("qty", "sum"), net=("net", "sum"))
+            .sort_values(["net", "product_id"], ascending=[False, True])
+            .head(n).reset_index(drop=True))
+
+
 def best_month(df: pd.DataFrame) -> str:
     """เดือนที่ยอดขายสุทธิสูงสุด ('YYYY-MM')"""
     return str(monthly_sales(df).idxmax())
